@@ -7,20 +7,19 @@ class IntegerRange:
         self.max_amount = max_amount
 
     def __set_name__(self, owner: type, name: str) -> None:
-        self.name = "_" + name
+        self.protected_name = f"_{name}"
 
-    def __get__(self, instance: object, owner: type) -> int:
-        return getattr(instance, self.name)
+    def __get__(self, instance: "Visitor", owner: type) -> int:
+        return getattr(instance, self.protected_name, None)
 
-    def __set__(self, instance: object, value: int) -> None:
+    def __set__(self, instance: "Visitor", value: int) -> None:
         if not isinstance(value, int):
-            raise TypeError(f"{self.name[1:]} must be an integer")
-        if not (self.min_amount <= value <= self.max_amount):
-            raise ValueError(
-                f"{self.name[1:]} must be between {self.min_amount} and"
-                f" {self.max_amount}"
-            )
-        setattr(instance, self.name, value)
+            raise TypeError("Value should be integer")
+        elif not (self.min_amount <= value <= self.max_amount):
+            raise ValueError(f"Value should be greater or equal to "
+                             f"than {self.min_amount}, "
+                             f"and less than or equal to {self.max_amount}")
+        setattr(instance, self.protected_name, value)
 
 
 class Visitor:
@@ -32,6 +31,10 @@ class Visitor:
 
 
 class SlideLimitationValidator(ABC):
+    age = IntegerRange(0, 120)
+    weight = IntegerRange(0, 300)
+    height = IntegerRange(0, 250)
+
     def __init__(self, age: int, weight: int, height: int) -> None:
         self.age = age
         self.weight = weight
@@ -51,9 +54,8 @@ class AdultSlideLimitationValidator(SlideLimitationValidator):
 
 
 class Slide:
-    def __init__(
-        self, name: str, limitation_class: type[SlideLimitationValidator]
-    ) -> None:
+    def __init__(self, name: str,
+                 limitation_class: type[SlideLimitationValidator]) -> None:
         self.name = name
         self.limitation_class = limitation_class
 
